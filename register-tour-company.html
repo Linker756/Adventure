@@ -107,7 +107,8 @@
   <main class="flex-grow flex items-center justify-center px-margin-mobile md:px-margin-desktop py-md">
     <div class="max-w-4xl w-full">
       
-      <form class="w-full max-w-3xl bg-surface-container-lowest rounded-xl border border-outline-variant shadow-[0_4px_12px_rgba(92,51,23,0.05)] overflow-hidden">
+      <form id="companyRegisterForm" class="w-full max-w-3xl bg-surface-container-lowest rounded-xl border border-outline-variant shadow-[0_4px_12px_rgba(92,51,23,0.05)] overflow-hidden">
+        <div id="formMessage" class="hidden text-center py-3 px-4 font-bold text-sm"></div>
         
         <!-- Header Section -->
         <div class="bg-surface-container px-md border-b border-outline-variant text-center py-md">
@@ -282,5 +283,71 @@
     </div>
   </footer>
 
+  <!-- Backend Integration Script -->
+  <script>
+    document.getElementById('companyRegisterForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formMessage = document.getElementById('formMessage');
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalBtnHtml = submitBtn.innerHTML;
+      
+      // Basic password validation
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      if (password !== confirmPassword) {
+        formMessage.textContent = "Passwords do not match.";
+        formMessage.className = "text-center py-3 px-4 font-bold text-sm bg-error-container text-on-error-container block";
+        return;
+      }
+      
+      // Update UI state
+      submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> Processing...';
+      submitBtn.disabled = true;
+      formMessage.className = "hidden";
+      
+      const data = {
+        companyName: document.getElementById('companyName').value,
+        regNumber: document.getElementById('regNumber').value,
+        email: document.getElementById('bizEmail').value,
+        phone: document.getElementById('countryCode').value + document.getElementById('phone').value,
+        country: document.getElementById('country').value,
+        city: document.getElementById('city').value,
+        address: document.getElementById('address').value,
+        managerName: document.getElementById('managerName').value,
+        operatorName: document.getElementById('operatorName').value,
+        password: password
+      };
+
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/register-company', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          formMessage.textContent = "Registration successful! Redirecting...";
+          formMessage.className = "text-center py-3 px-4 font-bold text-sm bg-[#d1fae5] text-[#065f46] block";
+          // Redirect or handle successful login
+          setTimeout(() => {
+            window.location.href = 'signin.html';
+          }, 2000);
+        } else {
+          formMessage.textContent = result.message || "Registration failed. Please try again.";
+          formMessage.className = "text-center py-3 px-4 font-bold text-sm bg-error-container text-on-error-container block";
+          submitBtn.innerHTML = originalBtnHtml;
+          submitBtn.disabled = false;
+        }
+      } catch (error) {
+        formMessage.textContent = "A network error occurred. Please try again.";
+        formMessage.className = "text-center py-3 px-4 font-bold text-sm bg-error-container text-on-error-container block";
+        submitBtn.innerHTML = originalBtnHtml;
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
 </body>
 </html>

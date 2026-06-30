@@ -115,7 +115,8 @@
         <p class="text-sm text-on-surface-variant mt-2">Join our network of global stewardship and lead unforgettable adventures.</p>
       </div>
 
-      <form class="p-md space-y-sm md:p-md">
+      <form id="agentRegisterForm" class="p-md space-y-sm md:p-md">
+        <div id="formMessage" class="hidden text-center py-3 px-4 font-bold text-sm"></div>
         
         <!-- Section 1: Personal Information -->
         <section>
@@ -256,7 +257,7 @@
             </label>
           </div>
 
-          <button class="w-full bg-[#f97316] hover:bg-[#ea580c] text-white font-bold text-sm py-2 px-4 rounded shadow transition-colors flex justify-center items-center gap-2" type="button">
+          <button class="w-full bg-[#f97316] hover:bg-[#ea580c] text-white font-bold text-sm py-2 px-4 rounded shadow transition-colors flex justify-center items-center gap-2" type="submit">
             Create Account <span class="material-symbols-outlined text-sm">arrow_forward</span>
           </button>
 
@@ -284,5 +285,72 @@
     </div>
   </footer>
 
+  <!-- Backend Integration Script -->
+  <script>
+    document.getElementById('agentRegisterForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formMessage = document.getElementById('formMessage');
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalBtnHtml = submitBtn.innerHTML;
+      
+      // Basic password validation
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      if (password !== confirmPassword) {
+        formMessage.textContent = "Passwords do not match.";
+        formMessage.className = "text-center py-3 px-4 font-bold text-sm bg-error-container text-on-error-container block";
+        return;
+      }
+      
+      // Update UI state
+      submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> Processing...';
+      submitBtn.disabled = true;
+      formMessage.className = "hidden";
+      
+      const data = {
+        firstName: document.getElementById('firstName').value,
+        lastName: document.getElementById('lastName').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('countryCode').value + document.getElementById('phone').value,
+        idNumber: document.getElementById('idNumber').value,
+        country: document.getElementById('country').value,
+        city: document.getElementById('city').value,
+        address: document.getElementById('address').value,
+        experience: document.getElementById('experience').value,
+        specialization: document.getElementById('specialization').value,
+        languages: document.getElementById('languages').value,
+        password: password
+      };
+
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/register-agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          formMessage.textContent = "Registration successful! Redirecting...";
+          formMessage.className = "text-center py-3 px-4 font-bold text-sm bg-[#d1fae5] text-[#065f46] block";
+          setTimeout(() => {
+            window.location.href = 'signin.html';
+          }, 2000);
+        } else {
+          formMessage.textContent = result.message || "Registration failed. Please try again.";
+          formMessage.className = "text-center py-3 px-4 font-bold text-sm bg-error-container text-on-error-container block";
+          submitBtn.innerHTML = originalBtnHtml;
+          submitBtn.disabled = false;
+        }
+      } catch (error) {
+        formMessage.textContent = "A network error occurred. Please try again.";
+        formMessage.className = "text-center py-3 px-4 font-bold text-sm bg-error-container text-on-error-container block";
+        submitBtn.innerHTML = originalBtnHtml;
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
 </body>
 </html>

@@ -126,7 +126,8 @@
         <p class="text-sm text-on-surface-variant">Access your stewardship dashboard</p>
       </div>
 
-      <form class="space-y-md">
+      <form id="loginForm" class="space-y-md">
+        <div id="formMessage" class="hidden text-center py-3 px-4 font-bold text-sm"></div>
         
         <!-- Email Field -->
         <div class="space-y-xs">
@@ -230,5 +231,59 @@
     });
   </script>
 
+  <!-- Backend Integration Script -->
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formMessage = document.getElementById('formMessage');
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalBtnHtml = submitBtn.innerHTML;
+      
+      // Update UI state
+      submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> Signing In...';
+      submitBtn.disabled = true;
+      formMessage.className = "hidden";
+      
+      const data = {
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value
+      };
+
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          formMessage.textContent = "Sign in successful!";
+          formMessage.className = "text-center py-3 px-4 font-bold text-sm bg-[#d1fae5] text-[#065f46] block";
+          
+          // Store the JWT token
+          localStorage.setItem('token', result.token);
+          localStorage.setItem('userRole', result.role);
+          
+          setTimeout(() => {
+            // Redirect based on role or to dashboard
+            window.location.href = 'index.html'; 
+          }, 1000);
+        } else {
+          formMessage.textContent = result.message || "Invalid credentials.";
+          formMessage.className = "text-center py-3 px-4 font-bold text-sm bg-error-container text-on-error-container block";
+          submitBtn.innerHTML = originalBtnHtml;
+          submitBtn.disabled = false;
+        }
+      } catch (error) {
+        formMessage.textContent = "A network error occurred. Please try again.";
+        formMessage.className = "text-center py-3 px-4 font-bold text-sm bg-error-container text-on-error-container block";
+        submitBtn.innerHTML = originalBtnHtml;
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
 </body>
 </html>
